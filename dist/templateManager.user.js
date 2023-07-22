@@ -1395,7 +1395,201 @@
             while (this.templateLinksWrapper.children.length) {
                 this.templateLinksWrapper.children[0].remove();
             }
-            GM.getValue(`${window.location.host}_alwaysLoad`).then(value => {
+
+            // VVV KUR0'S ADDED CODE VVV //
+            class CanvasController {
+                constructor() {
+                    this.canvas;
+                }
+            }
+
+            const canvasController = new CanvasController();
+
+            var select = document.createElement("select");
+            select.disabled = true;
+
+
+            // NON BLOCK VER VV
+            // function createTemplateOptions() {
+            //   let templates = this.manager.templates;
+            //   let index = 0;
+            //   const options = [];
+
+            //   var loadingOption = createLoadingOption();
+            //   select.appendChild(loadingOption);
+
+            //   function loopIteration() {
+            //     if (index < templates.length) {
+            //       let template = templates[index];
+            //       console.log(template);
+
+            //       var option = createOption(template);
+            //       options.push(option);
+
+            //       index++;
+            //       setTimeout(loopIteration, 0);
+            //     } else {
+            //       select.disabled = false;
+            //       loadingOption.remove();
+            //       select.append(...options);
+            //     }
+            //   }
+
+            //   loopIteration();
+            // }
+
+            // createTemplateOptions.bind(this)();
+            // NON BLOCKING VER ^^
+
+
+            // NOTE: BELOW BLOCKS. above is nonblocking ver.
+            // for (let template of this.manager.templates) {
+            //   console.log(template);
+
+            //   // Create and append options
+            //   var option = createOption(template);
+            //   select.appendChild(option);
+            // }
+
+            const xInput = createNumberInput();
+            const xlabelElement = createLabel("x");
+
+            this.templateLinksWrapper.appendChild(xlabelElement);
+            this.templateLinksWrapper.appendChild(xInput);
+
+            const yInput = createNumberInput();
+            const ylabelElement = createLabel("y");
+
+            this.templateLinksWrapper.appendChild(ylabelElement);
+            this.templateLinksWrapper.appendChild(yInput);
+
+            //document.querySelector("garlic-bread-embed").camera.applyPosition({x:280,y:827})
+
+            const findButton = createButton("Find");
+            findButton.onclick = () => {
+                document
+                    .querySelector("garlic-bread-embed")
+                    .camera.applyPosition({ x: xInput.value, y: yInput.value });
+            };
+            this.templateLinksWrapper.appendChild(findButton);
+
+            const resetPosButton = createButton("Reset Pos.");
+            resetPosButton.onclick = () => {
+                const canvas = canvasController.canvas;
+                const optionJSON = readSelectedOptionJSON();
+                canvas.style.left = optionJSON.x + "px";
+                canvas.style.top = optionJSON.y + "px";
+                xInput.value = optionJSON.x;
+                yInput.value = optionJSON.y;
+            };
+            this.templateLinksWrapper.appendChild(resetPosButton);
+
+            this.templateLinksWrapper.appendChild(document.createElement("br"));
+
+            xInput.addEventListener("change", onXChange);
+            yInput.addEventListener("change", onYChange);
+            select.addEventListener("change", onTemplateSelect.bind(this));
+
+            this.templateLinksWrapper.appendChild(select);
+
+            const scanButton = createButton("Scan for templates")
+            scanButton.addEventListener("click", onScan.bind(this));
+            this.templateLinksWrapper.appendChild(scanButton);
+
+            function onScan() {
+                for (let template of this.manager.templates) {
+                    console.log(template);
+
+                    // Create and append options
+                    var option = createOption(template);
+                    select.appendChild(option);
+                }
+                select.disabled = false;
+            }
+
+            function createButton(name){
+                const button = document.createElement("button");
+                button.textContent = name;
+                return button
+            }
+
+            function onXChange() {
+                const canvas = canvasController.canvas;
+                canvas.style.left = this.value + "px";
+            }
+
+            function onYChange() {
+                const canvas = canvasController.canvas;
+                canvas.style.top = this.value + "px";
+            }
+
+            function onTemplateSelect() {
+                const optionJSON = readSelectedOptionJSON();
+                const name = optionJSON.name;
+                const x = optionJSON.x;
+                const y = optionJSON.y;
+                var canvas;
+                for (let template of this.manager.templates) {
+                    if (template.name == name && template.x == x && template.y == y) {
+                        canvas = template.canvasElement;
+                    }
+                }
+                if (canvas == undefined) {
+                    alert("Could not find template on the canvas.");
+                } else {
+                    canvasController.canvas = canvas;
+                    xInput.value = x;
+                    yInput.value = y;
+                }
+            }
+
+            function readSelectedOptionJSON() {
+                const selectedOption = select.options[select.selectedIndex];
+                const optionJSON = JSON.parse(selectedOption.dataset.json);
+                return optionJSON;
+            }
+
+            function createOption(template) {
+                const name = template.name;
+                const x = template.x;
+                const y = template.y;
+                var option = document.createElement("option");
+                option.text = `${name} (${x}, ${y})`;
+                option.setAttribute("data-json", JSON.stringify(template));
+                return option;
+            }
+
+            function createLoadingOption() {
+                var option = document.createElement("option");
+                option.text = `Loading...`;
+                return option;
+            }
+
+            function createNumberInput() {
+                const input = document.createElement("input");
+                input.setAttribute("type", "number");
+                input.setAttribute("min", "-9999");
+                input.setAttribute("max", "9999");
+                return input;
+            }
+
+            function createLabel(name) {
+                const label = document.createElement("label");
+                label.textContent = name; // Set the label text
+                return label;
+            }
+
+            // ^^^ KUR0'S ADDED CODE ^^^ //
+
+
+
+
+
+
+
+
+            GM.getValue(`${window.location.host}_alwaysLoad`)
+                .then(value => {
                 let templates = value ? JSON.parse(value) : [];
                 let templateAdder = createTextInput("Always load", "Template URL", async (tx) => {
                     let url = new URL(tx);
