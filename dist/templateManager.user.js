@@ -1570,6 +1570,12 @@
                         this.reloadTemplatesWhenClosed = true;
                     });
                     button.className = `${button.className} templateLink`;
+
+                    button.addEventListener("contextmenu", function(e) {                        
+                        e.preventDefault();                      
+                        window.open(templates[i])
+                      });
+
                     this.templateLinksWrapper.appendChild(button);
                 }
             });
