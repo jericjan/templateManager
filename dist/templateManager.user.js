@@ -1403,34 +1403,54 @@
                     this.canvas;
                   }
                 },
-        
+
                 onScan() {
-                  for (let template of this.manager.templates) {
-                    console.log(template);
-        
-                    // Create and append options
-                    var option = Kuro.createOption(template);
-                    select.appendChild(option);
+                  const templates = this.manager.templates;
+                  const batchSize = 10;
+                  let currentIndex = 0;
+
+                  function appendNextBatch() {
+                  const endIndex = Math.min(currentIndex + batchSize, templates.length);
+
+                  for (let i = currentIndex; i < endIndex; i++) {
+                      const template = templates[i];
+                      console.log(template);
+
+                      // Create and append options
+                      const option = Kuro.createOption(template);
+                      select.appendChild(option);
                   }
-                  select.disabled = false;
+
+                  currentIndex = endIndex;
+
+                  if (currentIndex < templates.length) {
+                      requestAnimationFrame(appendNextBatch);
+                  } else {
+                    select.disabled = false;
+                  }
+                  }
+
+                  requestAnimationFrame(appendNextBatch);
+
+
                 },
-        
+
                 createButton(name) {
                   const button = document.createElement("button");
                   button.textContent = name;
                   return button;
                 },
-        
+
                 onXChange() {
                   const canvas = canvasController.canvas;
                   canvas.style.left = this.value + "px";
                 },
-        
+
                 onYChange() {
                   const canvas = canvasController.canvas;
                   canvas.style.top = this.value + "px";
                 },
-        
+
                 onTemplateSelect() {
                   const optionJSON = Kuro.readSelectedOptionJSON();
                   const name = optionJSON.name;
@@ -1450,29 +1470,30 @@
                     yInput.value = y;
                   }
                 },
-        
+
                 readSelectedOptionJSON() {
                   const selectedOption = select.options[select.selectedIndex];
                   const optionJSON = JSON.parse(selectedOption.dataset.json);
                   return optionJSON;
                 },
-        
+
                 createOption(template) {
                   const name = template.name;
                   const x = template.x;
                   const y = template.y;
                   var option = document.createElement("option");
                   option.text = `${name} (${x}, ${y})`;
+                  template = {name: name, x: x, y: y};
                   option.setAttribute("data-json", JSON.stringify(template));
                   return option;
                 },
-        
+
                 createLoadingOption() {
                   var option = document.createElement("option");
                   option.text = `Loading...`;
                   return option;
                 },
-        
+
                 createNumberInput() {
                   const input = document.createElement("input");
                   input.setAttribute("type", "number");
@@ -1480,37 +1501,37 @@
                   input.setAttribute("max", "9999");
                   return input;
                 },
-        
+
                 createLabel(name) {
                   const label = document.createElement("label");
                   label.textContent = name; // Set the label text
                   return label;
                 },
               };
-        
+
               const canvasController = new Kuro.CanvasController();
-        
+
               var select = document.createElement("select");
               select.disabled = true;
-        
+
               const xInput = Kuro.createNumberInput();
               const xlabelElement = Kuro.createLabel("x");
-        
+
               const yInput = Kuro.createNumberInput();
               const ylabelElement = Kuro.createLabel("y");
-              
+
               const findButton = Kuro.createButton("Find");
-        
+
               const resetPosButton = Kuro.createButton("Reset Pos.");
-        
+
               const scanButton = Kuro.createButton("Scan for templates");
-        
+
               findButton.onclick = () => {
                 document
                   .querySelector("garlic-bread-embed")
                   .camera.applyPosition({ x: xInput.value, y: yInput.value });
               };
-        
+
               resetPosButton.onclick = () => {
                 const canvas = canvasController.canvas;
                 const optionJSON = Kuro.readSelectedOptionJSON();
@@ -1519,12 +1540,12 @@
                 xInput.value = optionJSON.x;
                 yInput.value = optionJSON.y;
               };
-        
+
               xInput.addEventListener("change", Kuro.onXChange);
               yInput.addEventListener("change", Kuro.onYChange);
               select.addEventListener("change", Kuro.onTemplateSelect.bind(this));
               scanButton.addEventListener("click", Kuro.onScan.bind(this));
-        
+
               this.templateLinksWrapper.appendChild(xlabelElement);
               this.templateLinksWrapper.appendChild(xInput);
               this.templateLinksWrapper.appendChild(ylabelElement);
@@ -1571,8 +1592,8 @@
                     });
                     button.className = `${button.className} templateLink`;
 
-                    button.addEventListener("contextmenu", function(e) {                        
-                        e.preventDefault();                      
+                    button.addEventListener("contextmenu", function(e) {
+                        e.preventDefault();
                         window.open(templates[i])
                       });
 
