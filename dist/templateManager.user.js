@@ -38,10 +38,10 @@
     const NO_JSON_TEMPLATE_IN_PARAMS = "no_json_template";
     const CONTACT_INFO_CSS = css `
     div.iHasContactInfo {
-        max-width: 30px; 
+        max-width: 30px;
         padding: 1px;
         font-size: 1px; /* these 3 will be overwritten, but oh well */
-        width: max-content; 
+        width: max-content;
         white-space: nowrap;
         overflow: hidden;
         font-weight: bold;
@@ -89,7 +89,7 @@
         margin: 0px;
     }
 
-    .osuplaceNotification.visible { 
+    .osuplaceNotification.visible {
         height: auto;
         opacity: 1;
         padding: 8px;
@@ -877,6 +877,7 @@
                         for (let i = 0; i < json.whitelist.length; i++) {
                             let entry = json.whitelist[i];
                             let contactInfo = json.contact || json.contactInfo || lastContact;
+                            console.log(`Whitelist: ${url} -> ${entry.name}`)
                             entry.name = entry.name ? `${entry.name}, from: ${contactInfo}` : contactInfo;
                             this.whitelist.push(json.whitelist[i]);
                         }
