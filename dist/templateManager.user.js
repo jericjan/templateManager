@@ -383,8 +383,11 @@
     }
 
     class Template {
-        constructor(params, contact, globalCanvas, priority) {
+        constructor(params, contact, globalCanvas, priority, url, faction) {
             var _a, _b;
+            this.jsonUrl = url;
+            this.faction = faction;
+            this.contact = contact;
             this.canvasElement = document.createElement('canvas');
             this.needsCanvasInitialization = true;
             // assign params
@@ -444,6 +447,12 @@
                 this.contactElement.className = 'iHasContactInfo';
                 if (params.name) {
                     this.contactElement.appendChild(document.createTextNode(params.name));
+                    this.contactElement.appendChild(document.createElement('br'));
+                    let urlElem = document.createElement('a');
+                    urlElem.innerHTML = `[Click to open JSON url]`;
+                    urlElem.onclick = () => { window.open(url) };
+                    urlElem.style.zIndex = "999999999999";
+                    this.contactElement.appendChild(urlElem);
                     this.contactElement.appendChild(document.createElement('br'));
                     this.contactElement.appendChild(document.createTextNode(`contact: `));
                 }
@@ -843,7 +852,14 @@
             return Math.floor(Date.now() / CACHE_BUST_PERIOD).toString(36);
         }
         loadTemplatesFromJsonURL(url, minPriority = 0, lastContact = '') {
-            let _url = new URL(url);
+            let _url;
+            try {
+                _url = new URL(url);
+                // Code to handle a successful creation of the URL object
+            } catch (error) {
+                console.log(`loadTemplatesFromJsonURL: Invalid URL: ${url}`);
+                return;
+            }
             let uniqueString = `${_url.origin}${_url.pathname}`;
             // exit if already loaded
             // exit if blacklisted
@@ -865,7 +881,13 @@
                         this.responseDiffs.push(responseTime - Date.now());
                     }
                     // parse the response
-                    let json = JSON.parse(response.responseText);
+                    let json;
+                    try {
+                       json = JSON.parse(response.responseText);
+                    } catch (error) {
+                        console.log("Invalid JSON");
+                        return;
+                    }
                     // read blacklist. These will never be loaded
                     if (json.blacklist) {
                         for (let i = 0; i < json.blacklist.length; i++) {
@@ -877,7 +899,6 @@
                         for (let i = 0; i < json.whitelist.length; i++) {
                             let entry = json.whitelist[i];
                             let contactInfo = json.contact || json.contactInfo || lastContact;
-                            console.log(`Whitelist: ${url} -> ${entry.name}`)
                             entry.name = entry.name ? `${entry.name}, from: ${contactInfo}` : contactInfo;
                             this.whitelist.push(json.whitelist[i]);
                         }
@@ -886,7 +907,8 @@
                     if (json.templates) {
                         for (let i = 0; i < json.templates.length; i++) {
                             if (this.templates.length < this.templatesToLoad) {
-                                let constructor = (a) => new Template(json.templates[i], json.contact || json.contactInfo || lastContact, a, minPriority + this.templates.length);
+                                console.log(` ${lastContact} -> ${json.templates[i].name} - ${url}`);
+                                let constructor = (a) => new Template(json.templates[i], json.contact || json.contactInfo || lastContact, a, minPriority + this.templates.length, url, json.faction);
                                 this.templateConstructors.push(constructor);
                                 let newTemplate = constructor(this.selectedCanvas);
                                 this.templates.push(newTemplate);
@@ -1155,6 +1177,7 @@
                     this.loadTemplatesFromJsonURL(entry.url, i * this.templatesToLoad, entry.name);
                 }
             }
+            console.log(`Template count: ${this.templates.length}`)
         }
         setContactInfoDisplay(enabled) {
             for (let i = 0; i < this.templates.length; i++) {
@@ -1436,6 +1459,54 @@
 
                 },
 
+                onExport() {
+                    function formatJson(json) {
+                        let formattedString = '';
+                        for (const url in json) {
+                          formattedString += `\nFaction: ${json[url]['faction']}\n` +
+                            `Contact: ${json[url]['contact']}\n` +
+                            `Template Link: ${url}\n`;
+                            
+                          const names = json[url]['names'];
+                          for (const line of names) {
+                            formattedString += `- ${line}\n`;
+                          }
+                        }
+                        return formattedString.trim();
+                    }
+
+                    const templates = this.manager.templates
+                    let totalText = `Templates found: ${templates.length}\n`
+
+                    const json = {};
+                    for (const template of templates){
+                        const name = template.name;
+                        const url = template.jsonUrl;                                                
+                        const faction = template.faction;
+                        const contact = template.contact;
+                        if (!json[url]) {
+                            json[url] = {faction: faction, contact: contact, names: []};
+                          }
+                        json[url]['names'].push(name);
+                    }
+                    totalText += formatJson(json);
+
+                    const filename = "ExportedTemplates.txt";
+
+                    const blob = new Blob([totalText], { type: "text/plain" });
+                    const downloadUrl = URL.createObjectURL(blob);
+
+                    const link = document.createElement("a");
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    link.click();
+
+                    URL.revokeObjectURL(downloadUrl);
+                    link.remove();
+
+                },
+
+
                 createButton(name) {
                   const button = document.createElement("button");
                   button.textContent = name;
@@ -1526,6 +1597,7 @@
               const resetPosButton = Kuro.createButton("Reset Pos.");
 
               const scanButton = Kuro.createButton("Scan for templates");
+              const exportButton = Kuro.createButton("Export templates");
 
               findButton.onclick = () => {
                 document
@@ -1546,6 +1618,8 @@
               yInput.addEventListener("change", Kuro.onYChange);
               select.addEventListener("change", Kuro.onTemplateSelect.bind(this));
               scanButton.addEventListener("click", Kuro.onScan.bind(this));
+              exportButton.addEventListener("click", Kuro.onExport.bind(this));
+
 
               this.templateLinksWrapper.appendChild(xlabelElement);
               this.templateLinksWrapper.appendChild(xInput);
@@ -1556,6 +1630,7 @@
               this.templateLinksWrapper.appendChild(document.createElement("br"));
               this.templateLinksWrapper.appendChild(select);
               this.templateLinksWrapper.appendChild(scanButton);
+              this.templateLinksWrapper.appendChild(exportButton);
             // ^^^ KUR0'S ADDED CODE ^^^ //
 
 
