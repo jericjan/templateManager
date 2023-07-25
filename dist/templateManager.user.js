@@ -1284,7 +1284,7 @@
                 this.select = this.createSelect(5);
                 this.savedCoords = await GM.getValue("savedCoords", [])
                 console.log("saved coords: ", this.savedCoords)
-                for (var coords of this.savedCoords){
+                for (let coords of this.savedCoords){
                     this.createOption(coords.name, function(){
                         this.setPosition(coords.x, coords.y, coords.zoom);
                     });                        
