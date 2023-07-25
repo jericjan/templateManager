@@ -114,6 +114,14 @@
         overflow-y: auto;
         font-size: 14px;
     }
+
+    #CoordsMenu {
+        position: absolute;
+        bottom: 0px;
+        right: 0px;
+        background-color: #00000073;
+    }
+
 `;
     const SETTINGS_CSS = css `
     label,
@@ -1264,6 +1272,90 @@
         div.append(label);
         return div;
     }
+
+
+
+    class CoordsMenu {
+        constructor() {
+            return (async () => {
+                this.overlay = document.createElement("div");
+                this.overlay.id = "CoordsMenu"
+                document.body.appendChild(this.overlay);
+                this.select = this.createSelect(5);
+                this.savedCoords = await GM.getValue("savedCoords", [])
+                console.log("saved coords: ", this.savedCoords)
+                for (var coords of this.savedCoords){
+                    this.createOption(coords.name, function(){
+                        this.setPosition(coords.x, coords.y, coords.zoom);
+                    });                        
+                }
+
+                this.createButton("Save current position", function(){
+                        const name = prompt("Enter a name for this coordinate:");
+                        const position = this.getPosition(name);
+                        this.savedCoords.push(position);
+                        GM.setValue("savedCoords", this.savedCoords);
+                        
+                        this.createOption(name, function(){
+                            this.setPosition(position.x, position.y, position.zoom);
+                        });   
+
+                    }
+                    
+                );      
+                
+                this.createButton("Delete", function(){
+                    const index = this.select.selectedIndex;
+                    this.savedCoords.splice(index, 1);
+                    this.select.removeChild(this.select.childNodes[index]);
+                    GM.setValue("savedCoords", this.savedCoords);
+                });
+
+                
+            })();
+        }
+
+        createSelect(size){
+            var select = document.createElement("select");
+            select.size = size;
+            this.overlay.appendChild(select);    
+            return select        
+        }
+
+        getPosition(name) {
+            const camera = document.querySelector("garlic-bread-embed").camera
+            const x = camera.cx;
+            const y = camera.cy;
+            const zoom = camera.zoom;
+            return {name: name, x: x, y: y, zoom: zoom}
+        }
+
+        setPosition(x, y, zoom){
+            const camera = document.querySelector("garlic-bread-embed").camera
+            camera.applyPosition({x: x, y: y, zoom: zoom})
+        }
+
+        createButton(name, callback){
+            var button = document.createElement("button");
+            button.innerText = name;
+            button.onclick = callback.bind(this);
+            this.overlay.appendChild(button);           
+            return button
+        }
+
+        createOption(name, callback){            
+            var option = document.createElement("option");
+            option.text = name;  
+            option.onclick = callback.bind(this);      
+            this.select.appendChild(option);           
+            return option
+        }
+    
+
+
+    }
+    
+
     class Settings {
         constructor(manager) {
             this.overlay = document.createElement("div");
@@ -1427,38 +1519,38 @@
                     this.canvas;
                   }
                 },
-
+        
                 onScan() {
                   const templates = this.manager.templates;
                   const batchSize = 10;
                   let currentIndex = 0;
-
+        
                   function appendNextBatch() {
                   const endIndex = Math.min(currentIndex + batchSize, templates.length);
-
+        
                   for (let i = currentIndex; i < endIndex; i++) {
                       const template = templates[i];
                       console.log(template);
-
+        
                       // Create and append options
                       const option = Kuro.createOption(template);
                       select.appendChild(option);
                   }
-
+        
                   currentIndex = endIndex;
-
+        
                   if (currentIndex < templates.length) {
                       requestAnimationFrame(appendNextBatch);
                   } else {
                     select.disabled = false;
                   }
                   }
-
+        
                   requestAnimationFrame(appendNextBatch);
-
-
+        
+        
                 },
-
+        
                 onExport() {
                     function formatJson(json) {
                         let formattedString = '';
@@ -1474,10 +1566,10 @@
                         }
                         return formattedString.trim();
                     }
-
+        
                     const templates = this.manager.templates
                     let totalText = `Templates found: ${templates.length}\n`
-
+        
                     const json = {};
                     for (const template of templates){
                         const name = template.name;
@@ -1490,39 +1582,39 @@
                         json[url]['names'].push(name);
                     }
                     totalText += formatJson(json);
-
+        
                     const filename = "ExportedTemplates.txt";
-
+        
                     const blob = new Blob([totalText], { type: "text/plain" });
                     const downloadUrl = URL.createObjectURL(blob);
-
+        
                     const link = document.createElement("a");
                     link.href = downloadUrl;
                     link.download = filename;
                     link.click();
-
+        
                     URL.revokeObjectURL(downloadUrl);
                     link.remove();
-
+        
                 },
-
-
+        
+        
                 createButton(name) {
                   const button = document.createElement("button");
                   button.textContent = name;
                   return button;
                 },
-
+        
                 onXChange() {
                   const canvas = canvasController.canvas;
                   canvas.style.left = this.value + "px";
                 },
-
+        
                 onYChange() {
                   const canvas = canvasController.canvas;
                   canvas.style.top = this.value + "px";
                 },
-
+        
                 onTemplateSelect() {
                   const optionJSON = Kuro.readSelectedOptionJSON();
                   const name = optionJSON.name;
@@ -1542,13 +1634,13 @@
                     yInput.value = y;
                   }
                 },
-
+        
                 readSelectedOptionJSON() {
                   const selectedOption = select.options[select.selectedIndex];
                   const optionJSON = JSON.parse(selectedOption.dataset.json);
                   return optionJSON;
                 },
-
+        
                 createOption(template) {
                   const name = template.name;
                   const x = template.x;
@@ -1559,13 +1651,13 @@
                   option.setAttribute("data-json", JSON.stringify(template));
                   return option;
                 },
-
+        
                 createLoadingOption() {
                   var option = document.createElement("option");
                   option.text = `Loading...`;
                   return option;
                 },
-
+        
                 createNumberInput() {
                   const input = document.createElement("input");
                   input.setAttribute("type", "number");
@@ -1573,7 +1665,7 @@
                   input.setAttribute("max", "9999");
                   return input;
                 },
-
+        
                 createLabel(name) {
                   const label = document.createElement("label");
                   label.textContent = name; // Set the label text
@@ -1713,6 +1805,7 @@
     let SLIDERS_SVG = '<button><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Pro 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M0 416c0-17.7 14.3-32 32-32l54.7 0c12.3-28.3 40.5-48 73.3-48s61 19.7 73.3 48L480 384c17.7 0 32 14.3 32 32s-14.3 32-32 32l-246.7 0c-12.3 28.3-40.5 48-73.3 48s-61-19.7-73.3-48L32 448c-17.7 0-32-14.3-32-32zm192 0a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zM384 256a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm-32-80c32.8 0 61 19.7 73.3 48l54.7 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-54.7 0c-12.3 28.3-40.5 48-73.3 48s-61-19.7-73.3-48L32 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l246.7 0c12.3-28.3 40.5-48 73.3-48zM192 64a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm73.3 0L480 64c17.7 0 32 14.3 32 32s-14.3 32-32 32l-214.7 0c-12.3 28.3-40.5 48-73.3 48s-61-19.7-73.3-48L32 128C14.3 128 0 113.7 0 96S14.3 64 32 64l86.7 0C131 35.7 159.2 16 192 16s61 19.7 73.3 48z"/></svg></button>';
     async function init(manager) {
         let settings = new Settings(manager);
+        await new CoordsMenu();
         while (window.innerWidth === 0 || window.innerHeight === 0) {
             await sleep(1000);
         }
