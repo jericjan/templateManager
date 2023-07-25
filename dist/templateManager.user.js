@@ -1,8 +1,8 @@
 
 // ==UserScript==
 // @namespace		littleendu.xyz
-// @downloadURL		https://github.com/osuplace/templateManager/raw/main/dist/templateManager.user.js
-// @updateURL		https://github.com/osuplace/templateManager/raw/main/dist/templateManager.user.js
+// @downloadURL		https://github.com/jericjan/templateManager/raw/main/dist/templateManager.user.js
+// @updateURL		https://github.com/jericjan/templateManager/raw/main/dist/templateManager.user.js
 // @match			https://pxls.space/
 // @match			https://new.reddit.com/r/place/*
 // @match			https://www.reddit.com/r/place/*
@@ -18,7 +18,7 @@
 // @name			template-manager
 // @version			0.6.3
 // @description		Manages your templates on various canvas games
-// @author			LittleEndu, Mikarific, April
+// @author			LittleEndu, Mikarific, April, Kur0
 // @license			MIT
 //
 // Created with love using Gorilla
